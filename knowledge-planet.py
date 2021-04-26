@@ -95,7 +95,7 @@ def downUrl(down_id, count, down_lasttime):
 
 if __name__ == '__main__':
 	'''
-	print("请输入url：（例如：https://api.zsxq.com/v1.10/groups/51281152281444/files?count=20）")
+	print("请输入url：（例如：https://api.zsxq.com/v1.10/groups/8888888888/files?count=20）")
 	url = input()
 	print("请输入cookie：（例如：abtest_env=product; zsxq_access_token=00000000-6666-BBBB-FFFF-222222222222_8888888888888888）")
 	cookie = input()
