@@ -1,13 +1,16 @@
 import json
-import uuid
 import time
 import urllib
 import requests
 import json
+import os
 
 urlpath = '.\cookie_and_url.txt'
+lasttimepath = '.\last_time.txt'
 
-def downUrl(down_url):
+def downUrl(down_id, count, down_lasttime):
+	down_url = r'https://api.zsxq.com/v1.10/groups/' + str(down_id) + r'/files?count=20'
+	print(down_url)
 	headers = {
 	'Host': 'api.zsxq.com',
 	'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101 Firefox/78.0',
@@ -47,10 +50,23 @@ def downUrl(down_url):
 		print(endtime)
 	except:
 		pass
+	if count == 0:
+		try:
+			firstcreatetime = fileids[0]['file']['create_time']
+			with open('.\\last_time.txt','a+',encoding = 'utf-8') as up:
+				up.write(down_id + '=' + firstcreatetime + '\n')
+				up.close()
+		except:
+			pass
+	count += 1
 	for fileid in fileids:
 		id = fileid['file']['file_id']
 		title = fileid['file']['name']
 		createtime = fileid['file']['create_time']
+		if(str(createtime) == str(down_lasttime)):
+			print(str(createtime))
+			print("Last update this")
+			return
 		print(str(title) + ':' + str(id))
 		fdownloadurl = 'https://api.zsxq.com/v1.10/files/' + str(id) + '/download_url'
 		downloadurl_tmp2 = requests.get(fdownloadurl, headers = downheaders)
@@ -66,7 +82,7 @@ def downUrl(down_url):
 		try:
 			with open('.\\log.txt','a+',encoding = 'utf-8') as flog:
 				flog.write("TIME:" + createtime + '\n')
-				flog.write(title + ':' + str(id) + '\n')
+				flog.write(str(title) + ':' + str(id) + '\n')
 				flog.write("DOWNURL:" + downloadurl + '\n')
 				flog.close()
 		except:
@@ -74,7 +90,7 @@ def downUrl(down_url):
 	if length == 20:
 		url_encode = urllib.parse.quote(endtime)
 		next_url = down_url + '&end_time=' + str(url_encode)
-		downUrl(next_url)
+		downUrl(next_url, count)
 	
 
 if __name__ == '__main__':
@@ -84,15 +100,27 @@ if __name__ == '__main__':
 	print("请输入cookie：（例如：abtest_env=product; zsxq_access_token=00000000-6666-BBBB-FFFF-222222222222_8888888888888888）")
 	cookie = input()
 	'''
+	lasttimelist = []
 	with open(urlpath,'r',encoding='utf-8') as f:
 		cookie = f.readline()
 		lines = f.readlines()
 		cookie = cookie.strip()
 		for line in lines:
-			url = line.strip()
-			print(url)
+			id = line.strip()
+			if os.path.exists(lasttimepath):
+				fl = open(lasttimepath,'r',encoding='utf-8')
+				lasttimelines = fl.readlines()
+				for lasttimeline in lasttimelines:
+					lasttimelist = lasttimeline.split('=')
+					if(id == lasttimelist[0]):
+						lasttime = lasttimelist[1].strip()
+						print("LAST TIME:" + lasttime)
+				fl.close()
+			else:
+				lasttime = 0
 			try:
-				downUrl(url)
+				downUrl(id, 0, lasttime)
+				#pass
 			except:
 				pass
 	f.close()
