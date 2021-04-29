@@ -6,10 +6,30 @@ import json
 import os
 
 urlpath = '.\cookie_and_url.txt'
-lasttimepath = '.\last_time.txt'
+lasttimepath = '.\log\last_time.txt'
+logpath = '.\log\log.txt'
 
-def downUrl(down_id, count, down_lasttime):
-	down_url = r'https://api.zsxq.com/v1.10/groups/' + str(down_id) + r'/files?count=20'
+def mkdir(id):
+	local_path = os.getcwd()
+	chdir_path = local_path + '/pdf/' + str(id)
+	folder = os.path.exists(chdir_path)
+	if not os.path.exists("pdf"):
+		os.makedirs('pdf')
+		print("create pdf folder")
+	if not os.path.exists("log"):
+		os.makedirs('log')
+		print("create log folder")
+	if not folder:			#判断是否存在文件夹如果不存在则创建为文件夹
+		os.makedirs(chdir_path) 
+		print("create: " + chdir_path + " folder")
+	return chdir_path
+	
+
+def downUrl(down_id, count, down_lasttime, url_encode, downpath):
+	if count != 0:
+		down_url = r'https://api.zsxq.com/v1.10/groups/' + str(down_id) + r'/files?count=20' + r'&end_time=' + str(url_encode)
+	else:
+		down_url = r'https://api.zsxq.com/v1.10/groups/' + str(down_id) + r'/files?count=20'
 	print(down_url)
 	headers = {
 	'Host': 'api.zsxq.com',
@@ -53,7 +73,7 @@ def downUrl(down_id, count, down_lasttime):
 	if count == 0:
 		try:
 			firstcreatetime = fileids[0]['file']['create_time']
-			with open('.\\last_time.txt','a+',encoding = 'utf-8') as up:
+			with open(lasttimepath,'a+',encoding = 'utf-8') as up:
 				up.write(down_id + '=' + firstcreatetime + '\n')
 				up.close()
 		except:
@@ -74,13 +94,13 @@ def downUrl(down_id, count, down_lasttime):
 		downloadurl = downloadurl_tmp['resp_data']['download_url']
 		download = requests.get(downloadurl)
 		try:
-			with open('.\\pdf\\' + title,'wb') as fp:
+			with open(downpath + '/' + title,'wb') as fp:
 				fp.write(download.content)
 				fp.close()
 		except:
 			pass
 		try:
-			with open('.\\log.txt','a+',encoding = 'utf-8') as flog:
+			with open(logpath,'a+',encoding = 'utf-8') as flog:
 				flog.write("TIME:" + createtime + '\n')
 				flog.write(str(title) + ':' + str(id) + '\n')
 				flog.write("DOWNURL:" + downloadurl + '\n')
@@ -89,24 +109,27 @@ def downUrl(down_id, count, down_lasttime):
 			pass
 	if length == 20:
 		url_encode = urllib.parse.quote(endtime)
-		next_url = down_url + '&end_time=' + str(url_encode)
-		downUrl(next_url, count)
+		#next_url = down_url + '&end_time=' + str(url_encode)
+		downUrl(down_id, count, down_lasttime, url_encode, downpath)
 	
 
 if __name__ == '__main__':
 	'''
-	print("请输入url：（例如：https://api.zsxq.com/v1.10/groups/8888888888/files?count=20）")
+	print("请输入url：（例如：https://api.zsxq.com/v1.10/groups/88888888/files?count=20）")
 	url = input()
 	print("请输入cookie：（例如：abtest_env=product; zsxq_access_token=00000000-6666-BBBB-FFFF-222222222222_8888888888888888）")
 	cookie = input()
 	'''
+	
 	lasttimelist = []
+	url_encode = 0
 	with open(urlpath,'r',encoding='utf-8') as f:
 		cookie = f.readline()
 		lines = f.readlines()
 		cookie = cookie.strip()
 		for line in lines:
 			id = line.strip()
+			downpath = mkdir(id)
 			if os.path.exists(lasttimepath):
 				fl = open(lasttimepath,'r',encoding='utf-8')
 				lasttimelines = fl.readlines()
@@ -119,8 +142,7 @@ if __name__ == '__main__':
 			else:
 				lasttime = 0
 			try:
-				downUrl(id, 0, lasttime)
-				#pass
+				downUrl(id, 0, lasttime, url_encode, downpath)
 			except:
 				pass
 	f.close()
